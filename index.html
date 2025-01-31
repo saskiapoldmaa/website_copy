@@ -103,11 +103,11 @@
             align-items: center;
             padding: 10px 20px;
             background-color: #f0f0f0;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            /* box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); */
             position: fixed;
             height: auto;
             top: 0;
-            left: 300px;
+            left: 30px;
             width: calc(100% - 330px);
             z-index: 10;
             transition: background-color 0.3s;
@@ -138,7 +138,7 @@
         }
 
         .container {
-            margin-left: 350px;
+            margin-left: 50px;
             padding-top: 60px;
             padding: 20px;
         }
@@ -229,9 +229,26 @@
             text-decoration: none;
         }
 
+        #searchBox {
+            display: none;
+            width: 300px;
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        #searchBox.show {
+            display: block;
+            opacity: 1;
+            visibility: visible;
+        }
 
 
-
+        #header.active {
+            margin-left: 230px;
+        }
 
         @media (max-width: 768px) {
             nav {
@@ -273,6 +290,49 @@
                 font-size: 14px;
             }
         }
+
+        #sidebar {
+            width: 250px;
+            position: fixed;
+            left: -250px;
+            /* Initially hidden */
+            top: 0;
+            height: 100%;
+            transition: left 0.3s ease-in-out;
+        }
+
+        #sidebar.active {
+            left: 0;
+            /* Slide in when active */
+        }
+
+        #menu-toggle {
+            top: 10px;
+            left: 10px;
+            cursor: pointer;
+            color: #000;
+            border-radius: 5px;
+        }
+
+        .submenu {
+            display: none;
+        }
+
+        .submenu.active {
+            display: block;
+        }
+
+        #sidebar.active+#main-container {
+            margin-left: 350px;
+        }
+
+        .container.active #header {
+            margin-left: 350px;
+        }
+
+        mark {
+            background-color: yellow;
+        }
     </style>
     <script type="text/javascript" async
         src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js">
@@ -291,10 +351,15 @@
 
     <header id="header">
         <div class="left">
+
+
+
             <ul>
-                <li><i class="fas fa-bars icon" title="Menu"></i></li>
+                <li id="menu-toggle"><i class="fas fa-bars icon" title="Menu"></i></li>
                 <li><i class="fas fa-adjust icon" title="Toggle Dark/Light Mode" onclick="toggleDarkMode()"></i></li>
-                <li><i class="fas fa-search icon" title="Search"></i></li>
+                <li><i class="fas fa-search icon" title="Search" onclick="toggleSearchBox()"></i>
+                    <input type="text" id="searchBox" placeholder="Search..." oninput="highlightText()">
+                </li>
             </ul>
         </div>
         <div class="right">
@@ -305,10 +370,6 @@
             </ul>
         </div>
     </header>
-
-
-
-
 
     <nav id="sidebar">
         <a href="index.html">
@@ -331,13 +392,12 @@
                 <li><a href="#" onclick="switchHeader(); showDAQContent();">5. DAQ systems</a></li>
                 <li><a href="#" onclick="switchHeader(); showNIMContent();">6. NIM</a></li>
                 <li><a href="#" onclick="switchHeader(); showVaria();">8. Miscellaneous</a></li>
-
             </ul>
             <li onclick="toggleSubmenu('submenu3')">Theoretical</li>
             <ul id="submenu3" class="submenu">
                 <li><a href="#" onclick="switchHeader(); showJets();">1. Jets </a></li>
                 <li><a href="#" onclick="switchHeader(); showFeynmanDiagramsContent();">2. Feynman Diagrams</a></li>
-                <li><a href="#" onclick="switchHeader(); showROOT();">3. Why I <3 ROOT</a>
+                <li><a href="#" onclick="switchHeader(); showROOT();">3. Why I &lt;3 ROOT</a>
                 </li>
             </ul>
             <li onclick="toggleSubmenu('submenu4')">A Few Stories</li>
@@ -346,13 +406,19 @@
                 <li><a href="#" onclick="switchHeader(); showbeginning();">2. First Few Days</a></li>
                 <li><a href="#" onclick="switchHeader(); showfirst();">3. Training</a></li>
             </ul>
+            <li onclick="toggleSubmenu('submenu5')">Our experiment</li>
+            <ul id="submenu5" class="submenu">
+                <li><a href="#" onclick="loadArticle('lorem-ipsum.md')">Lorem Ipsum</a></li>
+                <li><a href="#" onclick="loadArticle('lorem-ipsum2.md')">Lorem Ipsum 1</a></li>
+            </ul>
         </ul>
     </nav>
 
 
 
+
     <div class="container" id="main-container">
-        
+
         <h2 id="page-title">Dummy's Guide to Particle Physics</h2>
         <div class="main-content">
             <div class="content">
@@ -382,7 +448,6 @@
                 </div>
             </div>
         </div>
-        <div id="content"></div>
     </div>
 
     <footer>Saskia Põldmaa, 2025</footer>
@@ -908,17 +973,95 @@
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
     <script>
-        async function loadMarkdown(file) {
-            const response = await fetch(file);
+        async function loadArticle(article) {
+            const response = await fetch(`articles/${article}`);
             const text = await response.text();
             const parsedContent = marked.parse(text);
-            // Append content instead of replacing it
-            document.getElementById('content').innerHTML += parsedContent;
+            const container = document.getElementById('main-container');
+            container.innerHTML = parsedContent;
+        }
+    </script>
+
+
+    <script>
+        // Function to toggle sidebar and adjust header margin
+        document.addEventListener("DOMContentLoaded", function () {
+            var sidebar = document.getElementById("sidebar");
+            var header = document.getElementById("header");
+
+            // Ensure sidebar is visible on initial load
+            sidebar.classList.add("active");
+            header.classList.add("active");
+        });
+
+        document.getElementById("menu-toggle").addEventListener("click", function () {
+            var sidebar = document.getElementById("sidebar");
+            var header = document.getElementById("header");
+
+            // Toggle sidebar visibility
+            sidebar.classList.toggle("active");
+
+            // Adjust header margin based on sidebar state
+            header.classList.toggle("active");
+        });
+
+        // Function to toggle submenus
+        function toggleSubmenu(submenuId) {
+            var submenu = document.getElementById(submenuId);
+            submenu.classList.toggle("active");
+        }
+    </script>
+
+
+    <script>
+        function toggleSearchBox() {
+            var searchBox = document.getElementById('searchBox');
+            if (searchBox.style.display === 'none' || searchBox.style.display === '') {
+                searchBox.style.display = 'block';
+            } else {
+                searchBox.style.display = 'none';
+            }
         }
 
-        // Load both articles
-        loadMarkdown('articles/lorem-ipsum.md');
-        loadMarkdown('articles/lorem-ipsum2.md');
+    </script>
+
+    <script>
+        function highlightText() {
+            let input = document.getElementById("searchBox").value.trim();
+            let container = document.getElementById("main-container");
+
+            function removeHighlight(node) {
+                if (node.nodeType === 3) { // Text node
+                    node.parentNode.innerHTML = node.parentNode.innerHTML.replace(/<mark>(.*?)<\/mark>/gi, "$1");
+                } else {
+                    node.childNodes.forEach(removeHighlight);
+                }
+            }
+
+            function applyHighlight(node) {
+                if (node.nodeType === 3) { // Text node
+                    let text = node.nodeValue;
+                    let regex = new RegExp(`(${input})`, "gi");
+                    if (input !== "" && text.match(regex)) {
+                        let highlighted = text.replace(regex, "<mark>$1</mark>");
+                        let span = document.createElement("span");
+                        span.innerHTML = highlighted;
+                        node.replaceWith(span);
+                    }
+                } else {
+                    node.childNodes.forEach(applyHighlight);
+                }
+            }
+
+            removeHighlight(container);
+            if (input !== "") applyHighlight(container);
+        }
+
+        function clearHighlight() {
+            document.getElementById("searchBox").value = "";
+            highlightText(); // Removes highlights by resetting text
+        }
+
     </script>
 
 </body>
